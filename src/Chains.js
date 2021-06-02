@@ -93,7 +93,7 @@ const InterChains = () => {
     setBridgeTarget((R + r / 2) + 5);
     setLayout(
       <Chains size={2 * (R + r)}>
-        <Payload initial={{opacity: 0}} animate={controls} transition={{ease: "easeOut", duration: 1}} />
+        <Payload initial={{opacity: 0}} animate={controls} transition={{ease: "easeOut", duration: 2.5}} />
         <Bridge top={R + r / 2} left={R + r / 2} />
         {chains.map((chain, index) => {
           return (
