@@ -9,10 +9,20 @@ import polygon from "./icons/polygon.png";
 import ethereum from "./icons/ethereum.png";
 
 const ChainsContainer = styled.div`
-  position: relative;
-  width: 600px;
-  height: 600px;
-  margin: 5% auto;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+`
+
+const Chains = styled.div`
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: ${props => props.size}px;
+  height: ${props => props.size}px;
   border-radius: 50%;
   background: rgb(38, 38, 38);
   box-shadow: 0px 0px 15px rgb(30, 144, 255);
@@ -25,27 +35,28 @@ const Crypto = styled.div`
   position: absolute;
   top: ${props => props.top}px;
   left: ${props => props.left}px;
-  width: 100px;
-  height: 100px;
+  width: ${props => props.r}px;
+  height: ${props => props.r}px;
   margin: 0;
   border-radius: 50%;
   background: #222;
-  box-shadow: 2px 2px 5px rgb(30, 144, 255);
+  box-shadow: 1px 1px 5px rgb(30, 144, 255);
 `
 
 const Icon = styled.img`
-  width: 100px;
-  height: 100px;
+  width: ${props => props.r}px;
+  height: ${props => props.r}px;
 `
 
 const Bridge = styled.div`
   position: absolute;
-  top: 275px;
-  left: 275px;
+  top: ${props => props.top}px;
+  left: ${props => props.left}px;
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgb(30, 144, 255);
+  background: white;
+  box-shadow: 0.5px 0.5px 5px rgb(30, 144, 255);
 `
 
 const Payload = styled(motion.div)`
@@ -57,133 +68,96 @@ const Payload = styled(motion.div)`
   z-index: 2;
 `
 
-const Example = styled.button`
-  display: inline-block;
-  position: relative;
-  top: 650px;
-  left: ${props => props.left}px;
-  width: 150px;
-  height: 70px;
-  outline: none;
-  border: 1px solid dodgerblue;
-  border-radius: 5px;
-  background: rgb(38, 38, 38);
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
-  color: rgb(255, 255, 255, 0.8);
-`
+
+const InterChains = () => {
+
+  const [ layout, setLayout ] = useState([]);
+  const [ bridgeTarget, setBridgeTarget ] = useState();
+  const [ targets, setTargets ] = useState([]);
 
 
-const Chains = () => {
+  const chains = [
+    fusion,
+    polygon,
+    ethereum,
+    bsc,
+    fusion,
+    polygon,
+    ethereum,
+    bsc
+  ]
 
-  const [ transfer, setTransfer ] = useState();
-  const [ payload, setPayload ] = useState();
+  useEffect(() => {
+    const amount = 8;
+    const [ coordinates, R, r ] = drawCircles(300, amount, 0.4);
+    setBridgeTarget((R + r / 2) + 5);
+    setLayout(
+      <Chains size={2 * (R + r)}>
+        <Payload initial={{opacity: 0}} animate={controls} transition={{ease: "easeOut", duration: 1}} />
+        <Bridge top={R + r / 2} left={R + r / 2} />
+        {chains.map((chain, index) => {
+          return (
+            <Crypto
+              top={coordinates[index].y}
+              left={coordinates[index].x}
+              r={2 * r}
+              onClick={() => {
+                const randomChain = Math.floor(Math.random() * amount);
+                setNewTransfer(index, randomChain);
+              }}>
+              <Icon src={chain} r={2 * r}/>
+            </Crypto>
+          );
+        })}
+      </Chains>
+    );
+  }, []);
 
-  const networkPos = {
-    fusion: {
-      top: 35,
-      left: 280
-    },
-    bsc: {
-      top: 280,
-      left: 35
-    },
-    polygon: {
-      top: 280,
-      left: 525
-    },
-    ethereum: {
-      top: 525,
-      left: 280
+  const drawCircles = (R, n, resize) => {
+    let coordinates = [];
+    let makeTargets = [];
+    let r = Math.PI * R / n * resize;
+
+    for(let ii = 0; ii < n; ii++) {
+      let theta = ii * 2 * Math.PI / n;
+      let x = R * Math.sin(theta) - r;
+      let y = R * Math.cos(theta) + r;
+
+      let X = R + r + x;
+      let Y = R + r - y;
+
+      coordinates.push({
+        x: X,
+        y: Y,
+      });
+
+      makeTargets.push({
+        x: X + r / 2,
+        y: Y + r / 2
+      });
     }
-  }
 
-  const bridgePos = {
-    top: 280,
-    left: 280
+    setTargets(makeTargets);
+
+    return [ coordinates, R, r ];
   }
 
   const setNewTransfer = (from, to) => {
-
-    switch (from) {
-      case "fusion":
-        from = networkPos.fusion;
-        break;
-      case "bsc":
-        from = networkPos.bsc;
-        break;
-      case "polygon":
-        from = networkPos.polygon;
-        break;
-      case "ethereum":
-        from = networkPos.ethereum;
-        break;
-      default:
-        console.error("No \"from\" chain specified.");
-    }
-
-    switch (to) {
-      case "fusion":
-        to = networkPos.fusion;
-        break;
-      case "bsc":
-        to = networkPos.bsc;
-        break;
-      case "polygon":
-        to = networkPos.polygon;
-        break;
-      case "ethereum":
-        to = networkPos.ethereum;
-        break;
-      default:
-        console.error("No \"to\" chain specified.");
-    }
-
     controls.start({
-      x: [ from.left, bridgePos.left, to.left ],
-      y: [ from.top, bridgePos.top, to.top ],
+      x: [ targets[from].x, bridgeTarget, targets[to].x ],
+      y: [ targets[from].y, bridgeTarget, targets[to].y ],
       opacity: [ 0, 1, 0 ]
     });
   }
+
 
   const controls = useAnimation();
 
   return (
     <ChainsContainer>
-      
-      <Bridge />
-
-      <Payload initial={{opacity: 0}} animate={controls} transition={{ease: "easeOut", duration: 10}} />
-
-      <Crypto top={5} left={250}>
-        <Icon src={fusion} alt="fusion" />
-      </Crypto>
-      <Crypto top={250} left={5}>
-        <Icon src={bsc} alt="bsc" />
-      </Crypto>
-      <Crypto top={250} left={495}>
-        <Icon src={polygon} alt="polygon" />
-      </Crypto>
-      <Crypto top={495} left={250}>
-        <Icon src={ethereum} alt="ethereum" />
-      </Crypto>
-
-      <Example onClick={() => setNewTransfer("fusion", "bsc")}>
-        FSN {"<>"} BSC
-      </Example>
-      <Example onClick={() => setNewTransfer("polygon", "fusion")}>
-        Polygon {"<>"} FSN
-      </Example>
-      <Example onClick={() => setNewTransfer("ethereum", "polygon")}>
-        ETH {"<>"} Polygon
-      </Example>
-      <Example onClick={() => setNewTransfer("bsc", "fusion")}>
-        BSC {"<>"} FSN
-      </Example>
-
+      {layout}
     </ChainsContainer>
   );
 }
 
-export default Chains;
+export default InterChains;
