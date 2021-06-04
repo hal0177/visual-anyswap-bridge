@@ -24,6 +24,8 @@ import anybtc from "./icons/tokens/anybtc.png";
 import anyfsn from "./icons/tokens/anyfsn.png";
 import anyusdt from "./icons/tokens/anyusdt.png";
 
+const demoTransfers = require("./demoTransfers");
+
 const ChainsContainer = styled.div`
   position: absolute;
   top: 0;
@@ -41,7 +43,6 @@ const Chains = styled.div`
   height: ${props => props.size}px;
   border-radius: 50%;
   background: rgb(38, 38, 38);
-  // box-shadow: 0px 0px 15px rgb(30, 144, 255);
 `
 
 const Crypto = styled.div`
@@ -60,8 +61,6 @@ const Crypto = styled.div`
 `
 
 const Icon = styled.img`
-  // width: ${props => props.r}px;
-  // height: ${props => props.r}px;
   width: 70%;
   height: 70%;
 `
@@ -78,8 +77,8 @@ const Bridge = styled.img`
 
 const Payload = styled(motion.img)`
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: ${props => props.r}px;
+  height: ${props => props.r}px;
   z-index: 2;
 `
 
@@ -90,7 +89,7 @@ const InterChains = () => {
   const N = 13;
   const RESIZE = 0.5;
   const r = Math.PI * R / N * RESIZE;
-  const BRIDGE = (R + r / 2) + 5;
+  const BRIDGE = (R + r / 2) + 25;
 
   const CHAINS = [
     fusion,
@@ -102,10 +101,10 @@ const InterChains = () => {
     xdai,
     avalanche,
     harmony,
-    bitcoin,
-    litecoin,
     blocknet,
-    colossusxt
+    colossusxt,
+    bitcoin,
+    litecoin
   ]
 
   const TOKENS = [
@@ -115,6 +114,7 @@ const InterChains = () => {
     anyusdt
   ]
 
+  const [ active, setActive ] = useState(false);
   const [ coordinates, setCoordinates ] = useState(() => {
     return CHAINS.map(() => {
       return {
@@ -133,28 +133,30 @@ const InterChains = () => {
   });
 
 
-
   const randomTransfer = () => {
-    setInterval(() => {
-      let from = Math.floor(Math.random() * N);
-      let to = Math.floor(Math.random() * N);
-      let token = TOKENS[Math.floor(Math.random() * TOKENS.length)];
-      let amount = 0;
-      while(from === to) {
-        from = Math.floor(Math.random() * N);
-      }
-      
-      setPayload({from, to, token, amount});
-    }, 5000);
+    if(!active) {
+      setActive(setInterval(() => {
+        let { from, to, tokenId } = demoTransfers[Math.floor(Math.random() * demoTransfers.length)];
+        let token = TOKENS[tokenId];
+        let amount = Math.floor(Math.random() * 50) + 30;
+        
+        setPayload({from, to, token, amount});
+      }, 5000));
+    }
+    else {
+      clearInterval(active);
+      setActive(false);
+    }
   }
 
 
 
   useEffect(() => {
     if(coordinates[payload.from] && coordinates[payload.to] && payload.token) {
+      let offset = payload.amount / 4;
       controls.start({
-        x: [ coordinates[payload.from].centreX, BRIDGE, coordinates[payload.to].centreX ],
-        y: [ coordinates[payload.from].centreY, BRIDGE, coordinates[payload.to].centreY ],
+        x: [ coordinates[payload.from].centreX - offset, BRIDGE - (payload.amount / 2), coordinates[payload.to].centreX - offset ],
+        y: [ coordinates[payload.from].centreY - offset, BRIDGE - (payload.amount / 2), coordinates[payload.to].centreY - offset ],
         opacity: [ 0, 1, 0 ]
       });
     }
@@ -209,6 +211,7 @@ const InterChains = () => {
           animate={controls}
           transition={{ease: "easeOut", duration: 5}}
           src={payload.token}
+          r={payload.amount}
         />
 
       </Chains>
